@@ -53,9 +53,6 @@ pub fn get_device_arguments(io_cfg: &SoapySdrIoCfg, mode: Mode) -> Vec<(String, 
 
     // Additional device arguments for devices that need them
     match driver {
-        "plutosdr" => {
-            // TODO
-        },
         _ => { },
     }
 
@@ -81,9 +78,6 @@ impl SdrSettings {
 
             ("uhd", _) | ("b200", _) =>
                 Self::settings_usrp_b2x0(&io_cfg.iocfg_usrpb2xx, mode),
-
-            // TODO
-            //("PlutoSDR", _) => Self::settings_pluto(&io_cfg.iocfg_pluto, mode),
 
             _ => Self::unknown(mode),
         }
