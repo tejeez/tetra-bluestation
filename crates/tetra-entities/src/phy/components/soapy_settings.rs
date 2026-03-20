@@ -82,7 +82,9 @@ impl SdrSettings {
         match (driver_key, hardware_key) {
             ("FX3", "LimeSDR-USB") => Self::settings_limesdr(&io_cfg.iocfg_limesdr, mode, LimeSdrModel::LimeSdrUsb),
             ("FX3", "LimeSDR-Mini_v2") => Self::settings_limesdr(&io_cfg.iocfg_limesdr, mode, LimeSdrModel::LimeSdrMiniV2),
-            ("FX3", _) => Self::settings_limesdr(&io_cfg.iocfg_limesdr, mode, LimeSdrModel::Other),
+            ("FX3", _) => Self::settings_limesdr(&io_cfg.iocfg_limesdr, mode, LimeSdrModel::OtherFx3),
+            ("FT601", "LimeNET-Micro") => Self::settings_limesdr(&io_cfg.iocfg_limesdr, mode, LimeSdrModel::LimeNetMicro),
+            ("FT601", _) => Self::settings_limesdr(&io_cfg.iocfg_limesdr, mode, LimeSdrModel::OtherFt601),
 
             ("sx", _) => Self::settings_sxceiver(&io_cfg.iocfg_sxceiver),
 
@@ -120,7 +122,9 @@ impl SdrSettings {
             name: match model {
                 LimeSdrModel::LimeSdrUsb => "LimeSDR USB",
                 LimeSdrModel::LimeSdrMiniV2 => "LimeSDR Mini 2.0",
-                LimeSdrModel::Other => "Unknown LimeSDR model",
+                LimeSdrModel::LimeNetMicro => "LimeNET Micro",
+                LimeSdrModel::OtherFx3 => "Unknown LimeSDR model with FX3",
+                LimeSdrModel::OtherFt601 => "Unknown LimeSDR model with FT601",
             }.to_string(),
             use_get_hardware_time: true,
             fs: if mode == Mode::Mon { 16384e3 } else { 512e3 },
@@ -232,8 +236,11 @@ impl SdrSettings {
 enum LimeSdrModel {
     LimeSdrUsb,
     LimeSdrMiniV2,
-    /// Other LimeSDR models
-    Other,
+    LimeNetMicro,
+    /// Other LimeSDR models with FX3 driver
+    OtherFx3,
+    /// Other LimeSDR models with FT601 driver
+    OtherFt601,
 }
 
 /// Get processing block size in samples for a given sample rate.
