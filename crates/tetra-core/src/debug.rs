@@ -227,7 +227,7 @@ pub fn get_default_stdout_filter() -> EnvFilter {
         .add_directive("tetra_core::bitbuffer=warn".parse().unwrap())
 
         // Phy
-        .add_directive("tetra_entities::phy::components=warn".parse().unwrap())
+        .add_directive("tetra_entities::phy::components=info".parse().unwrap())
         .add_directive("tetra_entities::phy::phy_bs=info".parse().unwrap())
 
         // Lmac
