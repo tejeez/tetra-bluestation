@@ -131,6 +131,9 @@ impl RxTxDev for RxTxDevSoapySdr {
         tx_slot: &[TxSlotBits],
         // TODO multiple demodulators
     ) -> Result<Vec<Option<RxSlotBits<'a>>>, RxTxDevError> {
+        if let Some(tx_dsp) = &mut self.tx_dsp {
+            tx_dsp.invalidate_sdr_time();
+        }
         // First generate as much TX signal as possible at the moment.
         while self.process_tx_block(tx_slot)? {}
 
@@ -308,7 +311,11 @@ impl RxDsp {
 struct TxDsp {
     fcfb: fcfb::SynthesisOutputProcessor,
     block_count: fcfb::BlockCount,
-    initial_time: i64,
+    /// Latest hardware time read from SDR device as a sample count.
+    /// This is an estimate of the sample counter value
+    /// where SDR device is currently transmitting.
+    sdr_time: Option<SampleCount>,
+    minimum_timing_margin: SampleCount,
     modulators: Vec<ModulatorChannel>,
 }
 
@@ -332,7 +339,8 @@ impl TxDsp {
         Self {
             fcfb,
             block_count: 0,
-            initial_time: 0, // TODO: get it from RX
+            sdr_time: None,
+            minimum_timing_margin: SampleCount::MAX,
             modulators,
         }
     }
@@ -343,9 +351,11 @@ impl TxDsp {
         latest_rx_block: Option<fcfb::BlockCount>,
         tx_slot: &[TxSlotBits],
     ) -> Result<bool, RxTxDevError> {
-        let current_sample = sdr.tx_current_count()?;
+        if self.sdr_time.is_none() {
+            self.update_sdr_time(sdr)?;
+        }
         // Current time as block count
-        let current_block = current_sample.div_euclid(self.fcfb.output_block_size() as SampleCount);
+        let current_block = self.sdr_time.unwrap().div_euclid(self.fcfb.output_block_size() as SampleCount);
 
         let d = self.block_count - current_block;
         // Skip TX blocks in the past or in too near future
@@ -396,12 +406,39 @@ impl TxDsp {
 
         sdr.transmit(tx_signal, Some(sdr_sample_count))?;
 
-        // tracing::trace!("Produced transmit block {} ({} samples in future)",
-        //     self.block_count - 1,
-        //     sdr_sample_count - sdr.tx_current_count().unwrap_or(0),
-        // );
+        // Check hardware time right after writing the transmit buffer
+        // so we can check how far in future the TX block was,
+        // i.e. how much extra time there would have been to produce the block.
+        // Also store it so it can be used by the next call to process_block().
+        self.update_sdr_time(sdr)?;
+        // How much in future transmitted block was
+        let timing_margin = sdr_sample_count - self.sdr_time.unwrap();
+        tracing::trace!("Produced transmit block {} ({} samples in future)",
+            self.block_count - 1,
+            timing_margin
+        );
+        self.minimum_timing_margin = self.minimum_timing_margin.min(timing_margin);
+        // Report it on info level every few seconds
+        if self.block_count.rem_euclid(16384) == 0 {
+            let minimum_timing_margin_ms = 1000.0 * self.minimum_timing_margin as f64 / sdr.tx_sample_rate();
+            tracing::info!("Estimated margin for TX deadline: {:.2} ms", minimum_timing_margin_ms);
+            self.minimum_timing_margin = timing_margin;
+        }
 
         Ok(true)
+    }
+
+    pub fn update_sdr_time(&mut self, sdr: &mut soapyio::SoapyIo) -> Result<(), RxTxDevError> {
+        self.sdr_time = Some(sdr.tx_current_count()?);
+        Ok(())
+    }
+
+    /// Mark a previously read self.sdr_time as outdated
+    /// and make process_block read it from the SDR device.
+    /// This should be called before process_block()
+    /// in case the previous process_block() call did not happen immediately before.
+    pub fn invalidate_sdr_time(&mut self) {
+        self.sdr_time = None;
     }
 }
 
