@@ -51,6 +51,9 @@ impl Modulator {
         // Compensate for delay of pulse shaping filter in sample count
         let sample_counter = sample_counter + CHANNEL_FILTER_TAPS.len() as SampleCount;
 
+        // Scaling factor to keep peak amplitude in pulse shaping filter output just below 1.0.
+        const SCALING: RealSample = 0.68 * SPS as RealSample;
+
         // Sample counter at beginning of current slot.
         // TODO: adjust self.reference_time when hyperframe number wraps to 0.
         // Now it breaks after 46 days.
@@ -72,7 +75,7 @@ impl Modulator {
                 } else if let Some(bits) = tx_slot.slot {
                     if sample_in_slot % SPS == 0 {
                         let symbol_i = (sample_in_slot / SPS) as usize;
-                        sample = self.dqpsk.symbol(bits[symbol_i * 2] != 0, bits[symbol_i * 2 + 1] != 0);
+                        sample = SCALING * self.dqpsk.symbol(bits[symbol_i * 2] != 0, bits[symbol_i * 2 + 1] != 0);
                     }
                 }
             }
