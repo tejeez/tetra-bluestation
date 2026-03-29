@@ -25,7 +25,7 @@ use tetra_entities::{
     lmac::lmac_bs::LmacBs,
     mle::mle_bs::MleBs,
     mm::mm_bs::MmBs,
-    phy::{components::soapy_dev::RxTxDevSoapySdr, phy_bs::PhyBs},
+    phy::{components::soapy_dev::RxTxDevSoapySdr, components::iqsocket_dev::RxTxDevIqSocket, phy_bs::PhyBs},
     sndcp::sndcp_bs::Sndcp,
     umac::umac_bs::UmacBs,
 };
@@ -115,6 +115,11 @@ fn build_bs_stack(cfg: &mut SharedConfig) -> (MessageRouter, Option<TelemetrySou
     match cfg.config().phy_io.backend {
         PhyBackend::SoapySdr => {
             let rxdev = RxTxDevSoapySdr::new(cfg);
+            let phy = PhyBs::new(cfg.clone(), rxdev);
+            router.register_entity(Box::new(phy));
+        }
+        PhyBackend::IqSocket => {
+            let rxdev = RxTxDevIqSocket::new(cfg);
             let phy = PhyBs::new(cfg.clone(), rxdev);
             router.register_entity(Box::new(phy));
         }

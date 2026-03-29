@@ -81,6 +81,8 @@ impl StackConfig {
                     return Err("soapysdr configuration must be provided for Soapysdr backend");
                 };
             }
+            // Default values are fine for IqSocket, so do not require configuration
+            PhyBackend::IqSocket => {}
             PhyBackend::None => {} // For testing
             PhyBackend::Undefined => {
                 return Err("phy_io backend must be defined");

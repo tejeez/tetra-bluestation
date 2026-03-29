@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use serde::Deserialize;
 use toml::Value;
 
-use crate::bluestation::{CfgSoapySdr, SoapySdrDto};
+use crate::bluestation::{CfgSoapySdr, SoapySdrDto, CfgIqSocket, IqSocketDto};
 
 /// The PHY layer backend type
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -12,6 +12,7 @@ pub enum PhyBackend {
     Undefined,
     None,
     SoapySdr,
+    IqSocket,
 }
 
 /// PHY layer I/O configuration
@@ -27,6 +28,8 @@ pub struct CfgPhyIo {
 
     /// For Soapysdr backend: SoapySDR configuration
     pub soapysdr: Option<CfgSoapySdr>,
+
+    pub iqsocket: CfgIqSocket,
 }
 
 #[derive(Deserialize)]
@@ -39,6 +42,7 @@ pub struct PhyIoDto {
     pub dl_input_file: Option<String>,
 
     pub soapysdr: Option<SoapySdrDto>,
+    pub iqsocket: Option<IqSocketDto>,
 
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
@@ -100,5 +104,6 @@ pub fn phy_dto_to_cfg(src: PhyIoDto) -> CfgPhyIo {
         ul_input_file: src.ul_input_file,
         dl_input_file: src.dl_input_file,
         soapysdr,
+        iqsocket: src.iqsocket.unwrap_or_default().to_cfg(),
     }
 }

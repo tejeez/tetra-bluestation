@@ -16,6 +16,9 @@ pub use sec_cell::*;
 pub mod sec_phy_soapy;
 pub use sec_phy_soapy::*;
 
+pub mod sec_phy_iqsocket;
+pub use sec_phy_iqsocket::*;
+
 pub mod sec_brew;
 pub use sec_brew::*;
 

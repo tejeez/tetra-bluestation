@@ -5,6 +5,7 @@ use tetra_core::TrainingSequence;
 pub enum RxTxDevError {
     RxEndOfData,
     RxReadError,
+    TxWriteError,
 }
 
 #[derive(Debug, Default)]

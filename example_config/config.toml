@@ -16,12 +16,18 @@ stack_mode = "Bs"
 
 [phy_io]
 
-# Input type: set to SoapySdr. May allow for future non-soapy RF backends.
+# Input type: set to SoapySdr for normal use
 backend = "SoapySdr"
+# Alternative phy_io backend to interface with Sdrglue
+# backend = "IqSocket"
 
 # DEBUG/TESTING code. Capture files get large quickly. 
 # dl_tx_file = "./dl_output.bin"    # Debugging; uncomment to save generated DL RF samples to file
 # ul_rx_file = "./ul_output.bin"    # Debugging; uncomment to save received UL RF samples to file
+
+# [phy_io.iqsocket]
+# rx_path = "/tmp/bluestation-rx-socket"
+# tx_path = "/tmp/bluestation-tx-socket"
 
 [phy_io.soapysdr]
 # Transmit tx(dl) and rx(ul) frequencies in Hz
